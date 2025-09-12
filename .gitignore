@@ -16,4 +16,4 @@ static/raw_images/
 static/brand_chart.png
 
 # Jupyter/Colab Notebooks (optional)
-model/car_brand_classifier.pt
+
