@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Car Brand Detection System</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+      }
+      #status {
+        margin-top: 15px;
+        font-weight: bold;
+      }
+      #brand-chart {
+        margin-top: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Car Brand Detection System</h1>
+    <button id="start-btn">Start</button>
+    <div id="status"></div>
+    <div id="brand-chart">
+      <h2>Top Detected Brands</h2>
+      <img
+        id="chart-img"
+        src="{{ url_for('static', filename='brand_chart.png') }}"
+        alt="Brand Chart"
+        width="400"
+      />
+    </div>
+    <script>
+      document.getElementById("start-btn").onclick = async function () {
+        document.getElementById("status").textContent =
+          "Processing... please wait.";
+        const resp = await fetch("/start", { method: "POST" });
+        const data = await resp.json();
+        if (data.status === "done") {
+          document.getElementById("status").textContent =
+            "Completed! Chart updated below.";
+          // Force browser reload of brand_chart.png using cache busting
+          document.getElementById("chart-img").src =
+            "/static/brand_chart.png?reload=" + new Date().getTime();
+        } else {
+          document.getElementById("status").textContent =
+            "Error: " + (data.error || "Unknown problem.");
+        }
+      };
+    </script>
+  </body>
+</html>
