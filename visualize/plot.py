@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')  # <--- Add THIS LINE at the very top, before importing pyplot
+matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 
 def plot_top_3_brands(brand_counts):

@@ -2,49 +2,286 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Brand Detection System</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial, sans-serif;
-        margin: 40px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
       }
-      #status {
-        margin-top: 15px;
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        max-width: 800px;
+        width: 100%;
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+      }
+
+      #start-btn {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto 20px;
+        padding: 15px 30px;
+        font-size: 1.2em;
         font-weight: bold;
+        color: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
       }
+
+      #start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+
+      #start-btn:active {
+        transform: translateY(0);
+      }
+
+      #status {
+        text-align: center;
+        margin: 20px 0;
+        padding: 15px;
+        font-weight: bold;
+        font-size: 1.1em;
+        border-radius: 10px;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #status.processing {
+        background: #fff3cd;
+        color: #856404;
+        border: 2px solid #ffc107;
+      }
+
+      #status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 2px solid #28a745;
+      }
+
+      #status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 2px solid #dc3545;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #667eea;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
       #brand-chart {
         margin-top: 40px;
+        text-align: center;
+      }
+
+      #brand-chart h2 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 1.8em;
+      }
+
+      .chart-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+        max-width: 100%;
+      }
+
+      #chart-img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+        display: none;
+      }
+
+      #chart-img.loaded {
+        display: block;
+      }
+
+      .no-chart {
+        color: #999;
+        font-style: italic;
+        padding: 40px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        #start-btn {
+          font-size: 1em;
+          padding: 12px 25px;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Car Brand Detection System</h1>
-    <button id="start-btn">Start</button>
-    <div id="status"></div>
-    <div id="brand-chart">
-      <h2>Top Detected Brands</h2>
-      <img
-        id="chart-img"
-        src="{{ url_for('static', filename='brand_chart.png') }}"
-        alt="Brand Chart"
-        width="400"
-      />
+    <div class="container">
+      <h1>🚗 Car Brand Detection System</h1>
+      <p class="subtitle">Analyze and visualize car brands from images</p>
+
+      <button id="start-btn">Start Analysis</button>
+
+      <div id="status"></div>
+
+      <div id="brand-chart">
+        <h2>Top Detected Brands</h2>
+        <div class="chart-container">
+          <img
+            id="chart-img"
+            src="{{ url_for('static', filename='brand_chart.png') }}"
+            alt="Brand Chart"
+            onerror="this.style.display='none'"
+            onload="this.classList.add('loaded')"
+          />
+          <p class="no-chart" id="no-chart-msg">
+            No analysis results yet. Click "Start Analysis" to begin.
+          </p>
+        </div>
+      </div>
     </div>
+
     <script>
-      document.getElementById("start-btn").onclick = async function () {
-        document.getElementById("status").textContent =
-          "Processing... please wait.";
-        const resp = await fetch("/start", { method: "POST" });
-        const data = await resp.json();
-        if (data.status === "done") {
-          document.getElementById("status").textContent =
-            "Completed! Chart updated below.";
-          // Force browser reload of brand_chart.png using cache busting
-          document.getElementById("chart-img").src =
-            "/static/brand_chart.png?reload=" + new Date().getTime();
-        } else {
-          document.getElementById("status").textContent =
-            "Error: " + (data.error || "Unknown problem.");
+      const startBtn = document.getElementById("start-btn");
+      const statusDiv = document.getElementById("status");
+      const chartImg = document.getElementById("chart-img");
+      const noChartMsg = document.getElementById("no-chart-msg");
+
+      // Check if chart already exists on page load
+      window.addEventListener("load", function () {
+        checkChartExists();
+      });
+
+      function checkChartExists() {
+        const img = new Image();
+        img.onload = function () {
+          chartImg.classList.add("loaded");
+          chartImg.style.display = "block";
+          noChartMsg.style.display = "none";
+        };
+        img.onerror = function () {
+          chartImg.style.display = "none";
+          noChartMsg.style.display = "block";
+        };
+        img.src =
+          "{{ url_for('static', filename='brand_chart.png') }}?" +
+          new Date().getTime();
+      }
+
+      startBtn.onclick = async function () {
+        // Update status to processing
+        statusDiv.className = "processing";
+        statusDiv.innerHTML =
+          '<span class="spinner"></span>Processing... please wait.';
+
+        // Disable button during processing
+        startBtn.disabled = true;
+        startBtn.style.opacity = "0.6";
+        startBtn.style.cursor = "not-allowed";
+
+        try {
+          const resp = await fetch("/start", { method: "POST" });
+          const data = await resp.json();
+
+          if (data.status === "done") {
+            statusDiv.className = "success";
+            statusDiv.innerHTML = "✓ Completed! Chart updated below.";
+
+            // Force reload the chart image with cache busting
+            const timestamp = new Date().getTime();
+            chartImg.src = "/static/brand_chart.png?reload=" + timestamp;
+
+            // Wait a bit and show the chart
+            setTimeout(() => {
+              chartImg.classList.add("loaded");
+              chartImg.style.display = "block";
+              noChartMsg.style.display = "none";
+            }, 500);
+          } else {
+            statusDiv.className = "error";
+            statusDiv.innerHTML =
+              "✗ Error: " + (data.error || "Unknown problem.");
+          }
+        } catch (error) {
+          statusDiv.className = "error";
+          statusDiv.innerHTML = "✗ Error: Failed to connect to server.";
+        } finally {
+          // Re-enable button
+          startBtn.disabled = false;
+          startBtn.style.opacity = "1";
+          startBtn.style.cursor = "pointer";
         }
       };
     </script>
