@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.venv/
+.git/
+.gitignore
+*.log
+.DS_Store
+static/raw_images/*.jpg
+static/raw_images/*.png
+static/brand_chart.png
