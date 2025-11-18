@@ -1,19 +1,35 @@
+"""
+Utility functions for the application
+"""
+
 import os
-from scripts.scrapper import scrape_and_store_images
-from app.predictor import batch_classify_images
-from visualize.plot import plot_top_3_brands
+import shutil
 
+def clear_directory(directory):
+    """Clear all files in a directory"""
+    if os.path.exists(directory):
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                print(f'Failed to delete {file_path}. Reason: {e}')
 
+def ensure_directory(directory):
+    """Create directory if it doesn't exist"""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
 
-def run_pipeline():
-    # 1. Scrape images
-    site_url = "https://www.flickr.com/groups/carexpressions/pool/" # <-- Change to your site
-    save_dir = "static/raw_images" 
-    img_count = 30  # Scrape 30 images for example
-    scrape_and_store_images(site_url, save_dir, limit=img_count)
-    # 2. Batch prediction
-    image_paths = [os.path.join(save_dir, f) for f in os.listdir(save_dir)
-                   if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-    brand_counts = batch_classify_images(image_paths)
-    # 3. Draw bar chart
-    plot_top_3_brands(brand_counts)
+def get_file_count(directory, extensions=('.jpg', '.jpeg', '.png')):
+    """Count files with specific extensions in a directory"""
+    if not os.path.exists(directory):
+        return 0
+    
+    count = 0
+    for filename in os.listdir(directory):
+        if filename.lower().endswith(extensions):
+            count += 1
+    return count
+

@@ -1,19 +1,38 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 
-# Virtual environments
+# Virtual Environment
 env/
+venv/
 .venv/
+ENV/
 
-# Mac & Linux system files
-.DS_Store
+# Model files (if large, otherwise commit them)
+# model/*.pt
 
-# Model/data outputs
+# Scraped images - don't commit these!
+static/raw_images/*
+!static/raw_images/.gitkeep
 
-static/raw_images/
+# Generated charts - regenerated on server
 static/brand_chart.png
 
-# Jupyter/Colab Notebooks (optional)
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Data files
+*.zip
+car_data.zip
 

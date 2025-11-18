@@ -5,5 +5,4 @@ requests
 Pillow
 beautifulsoup4
 matplotlib
-selenium
-chromedriver
+gunicorn==21.2.0

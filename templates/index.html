@@ -60,13 +60,43 @@
         font-size: 1.1em;
       }
 
-      #start-btn {
-        display: block;
+      .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .input-group {
         width: 100%;
-        max-width: 300px;
-        margin: 0 auto 20px;
-        padding: 15px 30px;
-        font-size: 1.2em;
+        max-width: 400px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1em;
+        transition: border-color 0.3s;
+      }
+
+      .input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn {
+        padding: 15px 40px;
+        font-size: 1.1em;
         font-weight: bold;
         color: white;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -75,15 +105,26 @@
         cursor: pointer;
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        min-width: 200px;
       }
 
-      #start-btn:hover {
+      .btn:hover:not(:disabled) {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
       }
 
-      #start-btn:active {
-        transform: translateY(0);
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
       }
 
       #status {
@@ -137,6 +178,11 @@
       #brand-chart {
         margin-top: 40px;
         text-align: center;
+        display: none;
+      }
+
+      #brand-chart.show {
+        display: block;
       }
 
       #brand-chart h2 {
@@ -158,17 +204,10 @@
         max-width: 100%;
         height: auto;
         border-radius: 10px;
+      }
+
+      .hidden {
         display: none;
-      }
-
-      #chart-img.loaded {
-        display: block;
-      }
-
-      .no-chart {
-        color: #999;
-        font-style: italic;
-        padding: 40px;
       }
 
       @media (max-width: 768px) {
@@ -180,9 +219,9 @@
           font-size: 2em;
         }
 
-        #start-btn {
+        .btn {
           font-size: 1em;
-          padding: 12px 25px;
+          padding: 12px 30px;
         }
       }
     </style>
@@ -190,9 +229,28 @@
   <body>
     <div class="container">
       <h1>🚗 Car Brand Detection System</h1>
-      <p class="subtitle">Analyze and visualize car brands from images</p>
+      <p class="subtitle">
+        Scrape, analyze and visualize car brands from images
+      </p>
 
-      <button id="start-btn">Start Analysis</button>
+      <div class="controls">
+        <div class="input-group">
+          <label for="image-count">Number of Images to Scrape:</label>
+          <input
+            type="number"
+            id="image-count"
+            min="10"
+            max="200"
+            value="50"
+            placeholder="Enter number (10-200)"
+          />
+        </div>
+
+        <button id="scrape-btn" class="btn">Start Scraping</button>
+        <button id="analyze-btn" class="btn btn-secondary hidden">
+          Show Graph
+        </button>
+      </div>
 
       <div id="status"></div>
 
@@ -203,85 +261,121 @@
             id="chart-img"
             src="{{ url_for('static', filename='brand_chart.png') }}"
             alt="Brand Chart"
-            onerror="this.style.display='none'"
-            onload="this.classList.add('loaded')"
           />
-          <p class="no-chart" id="no-chart-msg">
-            No analysis results yet. Click "Start Analysis" to begin.
-          </p>
         </div>
       </div>
     </div>
 
     <script>
-      const startBtn = document.getElementById("start-btn");
+      const scrapeBtn = document.getElementById("scrape-btn");
+      const analyzeBtn = document.getElementById("analyze-btn");
       const statusDiv = document.getElementById("status");
+      const chartDiv = document.getElementById("brand-chart");
       const chartImg = document.getElementById("chart-img");
-      const noChartMsg = document.getElementById("no-chart-msg");
+      const imageCountInput = document.getElementById("image-count");
 
-      // Check if chart already exists on page load
-      window.addEventListener("load", function () {
-        checkChartExists();
-      });
+      let scrapingComplete = false;
 
-      function checkChartExists() {
-        const img = new Image();
-        img.onload = function () {
-          chartImg.classList.add("loaded");
-          chartImg.style.display = "block";
-          noChartMsg.style.display = "none";
-        };
-        img.onerror = function () {
-          chartImg.style.display = "none";
-          noChartMsg.style.display = "block";
-        };
-        img.src =
-          "{{ url_for('static', filename='brand_chart.png') }}?" +
-          new Date().getTime();
-      }
+      // Step 1: Scrape Images
+      scrapeBtn.onclick = async function () {
+        const imageCount = parseInt(imageCountInput.value);
 
-      startBtn.onclick = async function () {
-        // Update status to processing
+        if (imageCount < 10 || imageCount > 200) {
+          statusDiv.className = "error";
+          statusDiv.innerHTML = "✗ Please enter a number between 10 and 200";
+          return;
+        }
+
         statusDiv.className = "processing";
         statusDiv.innerHTML =
-          '<span class="spinner"></span>Processing... please wait.';
+          '<span class="spinner"></span>Scraping ' +
+          imageCount +
+          " images... please wait.";
 
-        // Disable button during processing
-        startBtn.disabled = true;
-        startBtn.style.opacity = "0.6";
-        startBtn.style.cursor = "not-allowed";
+        scrapeBtn.disabled = true;
+        imageCountInput.disabled = true;
+        chartDiv.classList.remove("show");
 
         try {
-          const resp = await fetch("/start", { method: "POST" });
+          const resp = await fetch("/scrape", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ count: imageCount }),
+          });
           const data = await resp.json();
 
           if (data.status === "done") {
             statusDiv.className = "success";
-            statusDiv.innerHTML = "✓ Completed! Chart updated below.";
+            statusDiv.innerHTML =
+              "✓ Scraping completed! " +
+              data.images_scraped +
+              ' images downloaded. Click "Show Graph" to analyze.';
+            scrapingComplete = true;
+            analyzeBtn.classList.remove("hidden");
+          } else {
+            statusDiv.className = "error";
+            statusDiv.innerHTML =
+              "✗ Error: " + (data.error || "Scraping failed.");
+            scrapeBtn.disabled = false;
+            imageCountInput.disabled = false;
+          }
+        } catch (error) {
+          statusDiv.className = "error";
+          statusDiv.innerHTML = "✗ Error: Failed to connect to server.";
+          scrapeBtn.disabled = false;
+          imageCountInput.disabled = false;
+        }
+      };
+
+      // Step 2: Analyze and Show Graph
+      analyzeBtn.onclick = async function () {
+        if (!scrapingComplete) {
+          statusDiv.className = "error";
+          statusDiv.innerHTML = "✗ Please complete scraping first!";
+          return;
+        }
+
+        statusDiv.className = "processing";
+        statusDiv.innerHTML =
+          '<span class="spinner"></span>Analyzing images and generating graph...';
+
+        analyzeBtn.disabled = true;
+
+        try {
+          const resp = await fetch("/analyze", { method: "POST" });
+          const data = await resp.json();
+
+          if (data.status === "done") {
+            statusDiv.className = "success";
+            statusDiv.innerHTML = "✓ Analysis complete! Graph updated below.";
 
             // Force reload the chart image with cache busting
             const timestamp = new Date().getTime();
             chartImg.src = "/static/brand_chart.png?reload=" + timestamp;
 
-            // Wait a bit and show the chart
+            // Show the chart
             setTimeout(() => {
-              chartImg.classList.add("loaded");
-              chartImg.style.display = "block";
-              noChartMsg.style.display = "none";
-            }, 500);
+              chartDiv.classList.add("show");
+            }, 300);
+
+            // Allow re-scraping with different count
+            scrapeBtn.disabled = false;
+            imageCountInput.disabled = false;
+            analyzeBtn.disabled = false;
+            scrapingComplete = false;
+            analyzeBtn.classList.add("hidden");
           } else {
             statusDiv.className = "error";
             statusDiv.innerHTML =
-              "✗ Error: " + (data.error || "Unknown problem.");
+              "✗ Error: " + (data.error || "Analysis failed.");
+            analyzeBtn.disabled = false;
           }
         } catch (error) {
           statusDiv.className = "error";
           statusDiv.innerHTML = "✗ Error: Failed to connect to server.";
-        } finally {
-          // Re-enable button
-          startBtn.disabled = false;
-          startBtn.style.opacity = "1";
-          startBtn.style.cursor = "pointer";
+          analyzeBtn.disabled = false;
         }
       };
     </script>

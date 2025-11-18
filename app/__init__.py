@@ -1,12 +1,17 @@
-from flask import Flask
-from .routes import bp
+"""
+App initialization module
+"""
 
-import os
+from flask import Flask
 
 def create_app():
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    template_dir = os.path.join(base_dir, '..', 'templates')
-    app = Flask(__name__, template_folder=template_dir)
-    app.register_blueprint(bp)
+    """Application factory pattern"""
+    app = Flask(__name__, 
+                template_folder='../templates',
+                static_folder='../static')
+    
+    # Additional configuration can be added here
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+    
     return app
 
